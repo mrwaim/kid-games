@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Dino Adventure!</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #c8e6c9 0%, #fff9c4 50%, #ffe0b2 100%);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #game {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: clamp(6px, 1.5vh, 14px);
+    padding: 8px;
+  }
+
+  h1 {
+    font-size: clamp(1.3rem, 4.5vw, 2.4rem);
+    color: #33691e;
+    text-shadow: 2px 2px 0 #fff;
+    text-align: center;
+  }
+
+  #score-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    font-weight: 700;
+    color: #558b2f;
+  }
+  #stars { font-size: clamp(1.2rem, 3.5vw, 1.8rem); letter-spacing: 2px; }
+
+  /* --- Scene --- */
+  #scene {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(4px, 2vw, 20px);
+  }
+  #dino {
+    font-size: clamp(5rem, 16vw, 10rem);
+    line-height: 1;
+    transition: transform .3s;
+  }
+  #prompt-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  #sees {
+    font-size: clamp(.9rem, 2.5vw, 1.3rem);
+    color: #777;
+    font-weight: 600;
+  }
+  #thing-emoji {
+    font-size: clamp(5rem, 16vw, 10rem);
+    line-height: 1;
+    transition: transform .3s;
+  }
+  #thing-name {
+    font-size: clamp(1.4rem, 4.5vw, 2.4rem);
+    font-weight: 800;
+    color: #4e342e;
+  }
+
+  /* --- Action Buttons --- */
+  #buttons {
+    display: flex;
+    gap: clamp(8px, 2vw, 18px);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: clamp(90px, 22vw, 165px);
+    height: clamp(90px, 22vw, 165px);
+    border: 5px solid #fff;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .action-btn:active { transform: scale(.93); }
+  .action-btn .btn-emoji {
+    font-size: clamp(2.2rem, 6.5vw, 4rem);
+    line-height: 1;
+  }
+  .action-btn .btn-label {
+    font-size: clamp(.85rem, 2.5vw, 1.3rem);
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,.3);
+    margin-top: 3px;
+    text-align: center;
+  }
+
+  .action-btn[data-action="eat"]     { background: linear-gradient(135deg, #66bb6a, #aed581); box-shadow: 0 5px 16px rgba(102,187,106,.35); }
+  .action-btn[data-action="splash"]  { background: linear-gradient(135deg, #42a5f5, #26c6da); box-shadow: 0 5px 16px rgba(66,165,245,.35); }
+  .action-btn[data-action="scratch"] { background: linear-gradient(135deg, #ff9800, #ffb74d); box-shadow: 0 5px 16px rgba(255,152,0,.35); }
+  .action-btn[data-action="run"]     { background: linear-gradient(135deg, #ef5350, #ff7043); box-shadow: 0 5px 16px rgba(239,83,80,.35); }
+  .action-btn[data-action="sleep"]   { background: linear-gradient(135deg, #7e57c2, #b39ddb); box-shadow: 0 5px 16px rgba(126,87,194,.35); }
+
+  /* --- Reaction Overlay --- */
+  #reaction {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: clamp(5rem, 20vw, 12rem);
+    z-index: 2000;
+    pointer-events: none;
+    opacity: 0;
+    transition: transform .25s ease, opacity .25s;
+  }
+  #reaction.show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  /* --- Celebration --- */
+  #celebration {
+    position: fixed; inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.5);
+    z-index: 3000;
+  }
+  #celebration.show { display: flex; }
+  #celebration .msg {
+    font-size: clamp(1.8rem, 6vw, 4rem);
+    color: #fff;
+    font-weight: 900;
+    text-shadow: 3px 3px 0 #33691e;
+    text-align: center;
+    animation: pop .5s ease;
+  }
+  #celebration .big-stars {
+    font-size: clamp(3rem, 10vw, 6rem);
+    animation: pop .6s ease .15s both;
+  }
+  #play-again {
+    margin-top: 25px;
+    padding: 18px 50px;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 800;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #66bb6a, #ffca28);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,.3);
+    animation: pop .6s ease .3s both;
+  }
+  @keyframes pop {
+    0%   { transform: scale(0); }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%  { transform: translateX(-20px); }
+    40%  { transform: translateX(20px); }
+    60%  { transform: translateX(-12px); }
+    80%  { transform: translateX(12px); }
+  }
+  #dino.shake { animation: shake .4s ease; }
+
+  .confetti {
+    position: fixed;
+    border-radius: 2px;
+    z-index: 3001;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <h1>🦕 You Are a Dinosaur!</h1>
+  <div id="score-bar"><span id="stars"></span></div>
+  <div id="scene">
+    <div id="dino">🦕</div>
+    <div id="prompt-area">
+      <div id="sees">You see a...</div>
+      <div id="thing-emoji"></div>
+      <div id="thing-name"></div>
+    </div>
+  </div>
+  <div id="buttons">
+    <button class="action-btn" data-action="eat">
+      <span class="btn-emoji">😋</span>
+      <span class="btn-label">Eat it!</span>
+    </button>
+    <button class="action-btn" data-action="splash">
+      <span class="btn-emoji">💦</span>
+      <span class="btn-label">Splash!</span>
+    </button>
+    <button class="action-btn" data-action="scratch">
+      <span class="btn-emoji">🐾</span>
+      <span class="btn-label">Scratch!</span>
+    </button>
+    <button class="action-btn" data-action="run">
+      <span class="btn-emoji">🏃</span>
+      <span class="btn-label">Run!</span>
+    </button>
+    <button class="action-btn" data-action="sleep">
+      <span class="btn-emoji">😴</span>
+      <span class="btn-label">Nap!</span>
+    </button>
+  </div>
+</div>
+
+<div id="reaction"></div>
+
+<div id="celebration">
+  <div class="big-stars">🎉🦕🎉</div>
+  <div class="msg">Super Dino!</div>
+  <div class="big-stars">⭐🦖⭐</div>
+  <button id="play-again">Play Again!</button>
+</div>
+
+<script>
+const THINGS = [
+  // EAT - yummy plants!
+  { emoji: '🌳', name: 'Big Tree',     action: 'eat'     },
+  { emoji: '🌿', name: 'Leaves',       action: 'eat'     },
+  { emoji: '🌺', name: 'Flower',       action: 'eat'     },
+  { emoji: '🍄', name: 'Mushroom',     action: 'eat'     },
+
+  // SPLASH - water fun!
+  { emoji: '🌊', name: 'Lake',         action: 'splash'  },
+  { emoji: '💧', name: 'Puddle',       action: 'splash'  },
+  { emoji: '🏞️', name: 'River',       action: 'splash'  },
+
+  // SCRATCH - itchy dino!
+  { emoji: '🪵', name: 'Branch',       action: 'scratch' },
+  { emoji: '🪨', name: 'Big Rock',     action: 'scratch' },
+  { emoji: '🏔️', name: 'Rough Wall',  action: 'scratch' },
+
+  // RUN - danger!
+  { emoji: '🌋', name: 'Volcano',      action: 'run'     },
+  { emoji: '☄️', name: 'Meteor',       action: 'run'     },
+  { emoji: '⚡', name: 'Lightning',    action: 'run'     },
+
+  // SLEEP - cozy spots!
+  { emoji: '🕳️', name: 'Cozy Cave',   action: 'sleep'   },
+  { emoji: '🌙', name: 'Moonlight',    action: 'sleep'   },
+  { emoji: '☁️', name: 'Soft Grass',   action: 'sleep'   },
+];
+
+const REACTIONS = {
+  eat:     ['😋', '🤤', '😄'],
+  splash:  ['💦', '🐳', '😄'],
+  scratch: ['😌', '🐾', '😄'],
+  run:     ['💨', '😅', '😄'],
+  sleep:   ['💤', '😴', '😄'],
+};
+
+const ROUNDS = 10;
+let queue = [];
+let round = 0;
+let waiting = false;
+
+const dinoEl    = document.getElementById('dino');
+const thingEmoji = document.getElementById('thing-emoji');
+const thingName  = document.getElementById('thing-name');
+const starsEl    = document.getElementById('stars');
+const reactionEl = document.getElementById('reaction');
+const celebrationEl = document.getElementById('celebration');
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildQueue() {
+  const byAction = {};
+  THINGS.forEach(t => {
+    if (!byAction[t.action]) byAction[t.action] = [];
+    byAction[t.action].push(t);
+  });
+  // Guarantee one of each action
+  const picks = Object.values(byAction).map(arr => arr[Math.floor(Math.random() * arr.length)]);
+  const rest = shuffle(THINGS.filter(t => !picks.includes(t)));
+  return shuffle([...picks, ...rest.slice(0, ROUNDS - picks.length)]);
+}
+
+function startGame() {
+  round = 0;
+  queue = buildQueue();
+  starsEl.textContent = '';
+  celebrationEl.classList.remove('show');
+  waiting = false;
+  showNext();
+}
+
+function showNext() {
+  if (round >= ROUNDS) {
+    celebrationEl.classList.add('show');
+    spawnConfetti();
+    return;
+  }
+  const thing = queue[round];
+  thingEmoji.textContent = thing.emoji;
+  thingEmoji.style.transform = 'scale(0)';
+  thingName.textContent = thing.name;
+  requestAnimationFrame(() => {
+    thingEmoji.style.transform = 'scale(1)';
+  });
+}
+
+function handleAction(action) {
+  if (waiting) return;
+  waiting = true;
+  const thing = queue[round];
+  const correct = action === thing.action;
+
+  if (correct) {
+    starsEl.textContent += '⭐';
+    const pool = REACTIONS[action];
+    showReaction(pool[Math.floor(Math.random() * pool.length)]);
+    round++;
+    setTimeout(() => {
+      waiting = false;
+      showNext();
+    }, 1000);
+  } else {
+    showReaction('🙈');
+    dinoEl.classList.add('shake');
+    dinoEl.addEventListener('animationend', () => dinoEl.classList.remove('shake'), { once: true });
+    setTimeout(() => { waiting = false; }, 600);
+  }
+}
+
+function showReaction(emoji) {
+  reactionEl.textContent = emoji;
+  reactionEl.classList.add('show');
+  setTimeout(() => reactionEl.classList.remove('show'), 800);
+}
+
+function spawnConfetti() {
+  const colors = ['#66bb6a','#ffca28','#42a5f5','#ff7043','#ab47bc','#ef5350'];
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.top = -20 + 'px';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    c.style.animationDelay = (Math.random() * .8) + 's';
+    c.style.width = (8 + Math.random() * 10) + 'px';
+    c.style.height = (8 + Math.random() * 10) + 'px';
+    document.body.appendChild(c);
+    c.addEventListener('animationend', () => c.remove());
+  }
+}
+
+document.querySelectorAll('.action-btn').forEach(btn => {
+  btn.addEventListener('click', () => handleAction(btn.dataset.action));
+});
+document.getElementById('play-again').addEventListener('click', startGame);
+
+startGame();
+</script>
+</body>
+</html>
