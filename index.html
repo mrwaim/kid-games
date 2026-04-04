@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kid Games</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #a8edea 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    color: #4a3080;
+    text-shadow: 3px 3px 0 #fff;
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: clamp(1.1rem, 3vw, 1.6rem);
+    color: #555;
+    margin-bottom: 40px;
+  }
+
+  .games {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(20px, 4vw, 40px);
+    max-width: 900px;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: clamp(220px, 40vw, 360px);
+    padding: 40px 30px;
+    background: #fff;
+    border-radius: 32px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.12);
+    text-decoration: none;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 14px 40px rgba(0,0,0,.18);
+  }
+
+  .card .emoji {
+    font-size: clamp(4rem, 12vw, 7rem);
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .card .title {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 800;
+    color: #333;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .card .desc {
+    font-size: clamp(.95rem, 2.5vw, 1.15rem);
+    color: #777;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>Kid Games</h1>
+<p>Pick a game to play!</p>
+
+<div class="games">
+  <a class="card" href="weather-match.html">
+    <div class="emoji">🌧☀❄</div>
+    <div class="title">Weather Match</div>
+    <div class="desc">Match the umbrella, sunglasses, and mittens to the right weather!</div>
+  </a>
+
+  <a class="card" href="animal-match.html">
+    <div class="emoji">🐢🦁🐸</div>
+    <div class="title">Animal Match</div>
+    <div class="desc">Sort animals into reptiles, mammals, and amphibians!</div>
+  </a>
+</div>
+
+</body>
+</html>
