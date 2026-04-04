@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Egg Counting!</title>
+<title>Mixing Bowl!</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
@@ -29,6 +29,13 @@
     font-size: clamp(1.5rem, 5vw, 2.8rem);
     color: #e65100;
     text-shadow: 2px 2px 0 #fff;
+  }
+
+  #ingredient-label {
+    font-size: clamp(1.2rem, 3.5vw, 2rem);
+    font-weight: 800;
+    color: #6d4c41;
+    text-align: center;
   }
 
   /* --- Number Selector --- */
@@ -213,7 +220,9 @@
 <body>
 
 <div id="game">
-  <h1>🥚 Egg Counting!</h1>
+  <h1>🥣 Mixing Bowl!</h1>
+
+  <div id="ingredient-label"></div>
 
   <div id="selector">
     <button class="sel-btn" id="btn-minus">−</button>
@@ -222,7 +231,7 @@
   </div>
 
   <div id="bowl-area">
-    <div id="egg-waiting">🥚</div>
+    <div id="egg-waiting"></div>
     <div id="eggs-in-bowl"></div>
     <div id="bowl">🥣</div>
   </div>
@@ -232,7 +241,7 @@
   <button id="go-btn">GO!</button>
 </div>
 
-<div id="floating-egg">🥚</div>
+<div id="floating-egg"></div>
 
 <div id="celebration">
   <div class="chef">👨‍🍳</div>
@@ -282,7 +291,49 @@ function playTada() {
   });
 }
 
+// --- Ingredients ---
+const INGREDIENTS = [
+  { emoji: '🥚', name: 'Eggs' },
+  { emoji: '🍞', name: 'Bread' },
+  { emoji: '🍗', name: 'Chicken' },
+  { emoji: '🧈', name: 'Butter' },
+];
+
+let ingredientIndex = 0;
+let recipe = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startRecipe() {
+  recipe = shuffle(INGREDIENTS);
+  ingredientIndex = 0;
+  eggsInBowl.innerHTML = '';
+  showIngredient();
+}
+
+function showIngredient() {
+  const ing = recipe[ingredientIndex];
+  ingredientLabel.textContent = `Add some ${ing.name}! ${ing.emoji}`;
+  eggWaiting.textContent = ing.emoji;
+  floatingEgg.textContent = ing.emoji;
+  count = 3;
+  numDisplay.textContent = count;
+  counterEl.textContent = '';
+  running = false;
+  goBtn.disabled = false;
+  btnMinus.disabled = false;
+  btnPlus.disabled = false;
+}
+
 // --- Elements ---
+const ingredientLabel = document.getElementById('ingredient-label');
 const numDisplay   = document.getElementById('num-display');
 const btnMinus     = document.getElementById('btn-minus');
 const btnPlus      = document.getElementById('btn-plus');
@@ -319,12 +370,12 @@ goBtn.addEventListener('click', () => {
   goBtn.disabled = true;
   btnMinus.disabled = true;
   btnPlus.disabled = true;
-  eggsInBowl.innerHTML = '';
   counterEl.textContent = '';
-  dropEggs(count);
+  dropItems(count);
 });
 
-async function dropEggs(total) {
+async function dropItems(total) {
+  const ing = recipe[ingredientIndex];
   const bowlRect = bowlArea.getBoundingClientRect();
   const bowlCenterX = bowlRect.left + bowlRect.width / 2;
   const bowlTopY = bowlRect.top + bowlRect.height * 0.25;
@@ -334,48 +385,52 @@ async function dropEggs(total) {
   const startY = waitRect.top + waitRect.height / 2;
 
   for (let i = 1; i <= total; i++) {
-    await animateEggDrop(startX, startY, bowlCenterX, bowlTopY, i);
+    await animateDrop(startX, startY, bowlCenterX, bowlTopY, i, total, ing.emoji);
     await sleep(400);
   }
 
-  // Done!
-  setTimeout(() => {
-    playTada();
-    celMsg.textContent = `You added ${total} egg${total > 1 ? 's' : ''}!`;
-    celebrationEl.classList.add('show');
-    spawnConfetti();
-  }, 300);
+  // Move to next ingredient or celebrate
+  ingredientIndex++;
+  if (ingredientIndex < recipe.length) {
+    setTimeout(() => showIngredient(), 600);
+  } else {
+    setTimeout(() => {
+      playTada();
+      const summary = recipe.map(r => r.emoji).join(' ');
+      celMsg.textContent = `You mixed ${summary}\nTime to cook!`;
+      celebrationEl.classList.add('show');
+      spawnConfetti();
+    }, 400);
+  }
 }
 
-function animateEggDrop(fromX, fromY, toX, toY, num) {
+function animateDrop(fromX, fromY, toX, toY, num, total, emoji) {
   return new Promise(resolve => {
-    const egg = floatingEgg;
-    const eggW = egg.offsetWidth / 2;
-    const eggH = egg.offsetHeight / 2;
+    const el = floatingEgg;
+    const eW = el.offsetWidth / 2;
+    const eH = el.offsetHeight / 2;
 
-    egg.style.transition = 'none';
-    egg.style.left = (fromX - eggW) + 'px';
-    egg.style.top = (fromY - eggH) + 'px';
-    egg.style.opacity = '1';
+    el.style.transition = 'none';
+    el.style.left = (fromX - eW) + 'px';
+    el.style.top = (fromY - eH) + 'px';
+    el.style.opacity = '1';
 
     requestAnimationFrame(() => {
-      egg.style.transition = 'left 0.4s ease-in, top 0.4s ease-in';
-      egg.style.left = (toX - eggW) + 'px';
-      egg.style.top = (toY - eggH) + 'px';
+      el.style.transition = 'left 0.4s ease-in, top 0.4s ease-in';
+      el.style.left = (toX - eW) + 'px';
+      el.style.top = (toY - eH) + 'px';
     });
 
     setTimeout(() => {
-      egg.style.opacity = '0';
+      el.style.opacity = '0';
       playPlop();
 
-      // Add egg to bowl
       const e = document.createElement('span');
       e.className = 'bowl-egg';
-      e.textContent = '🥚';
+      e.textContent = emoji;
       eggsInBowl.appendChild(e);
 
-      // Update counter
-      counterEl.textContent = num + (num < parseInt(numDisplay.textContent) ? '...' : '!');
+      counterEl.textContent = num + (num < total ? '...' : '!');
 
       resolve();
     }, 450);
@@ -387,13 +442,10 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 // --- Cook Again ---
 cookAgain.addEventListener('click', () => {
   celebrationEl.classList.remove('show');
-  eggsInBowl.innerHTML = '';
-  counterEl.textContent = '';
-  running = false;
-  goBtn.disabled = false;
-  btnMinus.disabled = false;
-  btnPlus.disabled = false;
+  startRecipe();
 });
+
+startRecipe();
 
 function spawnConfetti() {
   const colors = ['#ff6f00','#ffca28','#66bb6a','#42a5f5','#ab47bc','#ef5350'];
