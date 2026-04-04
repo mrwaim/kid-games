@@ -322,18 +322,19 @@ function handleAction(action) {
     score++;
     starsEl.textContent += '⭐';
     showReaction('😄');
+    round++;
+    setTimeout(() => {
+      waiting = false;
+      showNext();
+    }, 1000);
   } else {
-    starsEl.textContent += '·';
     showReaction('😢');
     animalEmoji.classList.add('shake');
     animalEmoji.addEventListener('animationend', () => animalEmoji.classList.remove('shake'), { once: true });
+    setTimeout(() => {
+      waiting = false;
+    }, 600);
   }
-
-  round++;
-  setTimeout(() => {
-    waiting = false;
-    showNext();
-  }, 1000);
 }
 
 function showReaction(emoji) {
@@ -343,9 +344,9 @@ function showReaction(emoji) {
 }
 
 function endGame() {
-  finalScoreEl.textContent = `You got ${score} out of ${ROUNDS}!`;
+  finalScoreEl.textContent = `${ROUNDS} out of ${ROUNDS}! Amazing!`;
   celebrationEl.classList.add('show');
-  if (score >= 7) spawnConfetti();
+  spawnConfetti();
 }
 
 function spawnConfetti() {
