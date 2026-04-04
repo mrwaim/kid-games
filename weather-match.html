@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Weather Matching Game</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: clamp(1.6rem, 5vw, 3rem);
+    padding: 10px 0 5px;
+    color: #4a3080;
+    text-shadow: 2px 2px 0 #fff;
+  }
+
+  #game { display: flex; flex-direction: column; align-items: center; height: 100%; }
+
+  /* --- Drop Zones --- */
+  #boxes {
+    display: flex;
+    justify-content: center;
+    gap: clamp(10px, 3vw, 30px);
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .box {
+    width: clamp(120px, 26vw, 240px);
+    height: clamp(140px, 28vw, 260px);
+    border: 6px dashed #fff;
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: transform .15s, border-color .15s, background .15s;
+    position: relative;
+  }
+  .box[data-weather="rain"]   { background: rgba(100,149,237,.35); }
+  .box[data-weather="sun"]    { background: rgba(255,223,0,.35); }
+  .box[data-weather="winter"] { background: rgba(173,216,230,.45); }
+
+  .box .icon { font-size: clamp(3rem, 8vw, 5.5rem); line-height: 1; }
+  .box .label {
+    font-size: clamp(1rem, 3vw, 1.6rem);
+    font-weight: 700;
+    color: #333;
+  }
+  .box.hover {
+    transform: scale(1.08);
+    border-color: #ffdf00;
+    box-shadow: 0 0 30px rgba(255,223,0,.5);
+  }
+  .box .result {
+    position: absolute;
+    font-size: clamp(3.5rem, 9vw, 6rem);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  .box.matched .result { opacity: 1; }
+  .box.matched .icon,
+  .box.matched .label { opacity: .25; }
+
+  /* --- Draggable Items --- */
+  #items {
+    display: flex;
+    justify-content: center;
+    gap: clamp(20px, 5vw, 50px);
+    margin-top: clamp(20px, 4vh, 40px);
+  }
+
+  .item {
+    width: clamp(90px, 22vw, 170px);
+    height: clamp(90px, 22vw, 170px);
+    background: #fff;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(3rem, 9vw, 6rem);
+    box-shadow: 0 6px 20px rgba(0,0,0,.15);
+    cursor: grab;
+    transition: transform .25s, opacity .25s, box-shadow .15s;
+    position: relative;
+    z-index: 10;
+  }
+  .item:active { cursor: grabbing; }
+  .item.dragging {
+    z-index: 1000;
+    transform: scale(1.15);
+    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    opacity: .85;
+  }
+  .item.matched {
+    opacity: .3;
+    pointer-events: none;
+    transform: scale(.8);
+  }
+  .item.bounce {
+    animation: bounce .5s ease;
+  }
+  @keyframes bounce {
+    0%   { transform: translateY(0); }
+    30%  { transform: translateY(-30px); }
+    50%  { transform: translateY(0); }
+    70%  { transform: translateY(-12px); }
+    100% { transform: translateY(0); }
+  }
+
+  /* --- Reaction Popup --- */
+  #reaction {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: clamp(5rem, 20vw, 12rem);
+    z-index: 2000;
+    pointer-events: none;
+    transition: transform .3s ease, opacity .3s;
+    opacity: 0;
+  }
+  #reaction.show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  /* --- Celebration Overlay --- */
+  #celebration {
+    position: fixed; inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.45);
+    z-index: 3000;
+  }
+  #celebration.show { display: flex; }
+  #celebration .msg {
+    font-size: clamp(2rem, 7vw, 4.5rem);
+    color: #fff;
+    font-weight: 900;
+    text-shadow: 3px 3px 0 #ff6b9d;
+    text-align: center;
+    animation: pop .5s ease;
+  }
+  #celebration .stars {
+    font-size: clamp(3rem, 10vw, 6rem);
+    animation: pop .6s ease .15s both;
+  }
+  #play-again {
+    margin-top: 30px;
+    padding: 18px 50px;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 800;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #ff6b9d, #ffdf00);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,.3);
+    animation: pop .6s ease .3s both;
+  }
+  @keyframes pop {
+    0%   { transform: scale(0); }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  /* --- Confetti --- */
+  .confetti {
+    position: fixed;
+    width: 12px; height: 12px;
+    border-radius: 2px;
+    z-index: 3001;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <h1>Match the Weather!</h1>
+  <div id="boxes"></div>
+  <div id="items"></div>
+</div>
+
+<div id="reaction"></div>
+
+<div id="celebration">
+  <div class="stars">🎉🌟🎉</div>
+  <div class="msg">You did it!</div>
+  <div class="stars">⭐🥳⭐</div>
+  <button id="play-again">Play Again!</button>
+</div>
+
+<script>
+const WEATHERS = [
+  { key: 'rain',   icon: '🌧', label: 'Rainy Day',  match: 'umbrella',    successEmoji: '☔' },
+  { key: 'sun',    icon: '☀',  label: 'Sunny Day',  match: 'sunglasses',  successEmoji: '😎' },
+  { key: 'winter', icon: '❄',  label: 'Winter Day', match: 'mittens',     successEmoji: '☃' },
+];
+
+const ITEMS = [
+  { key: 'umbrella',   emoji: '🌂' },
+  { key: 'sunglasses', emoji: '🕶' },
+  { key: 'mittens',    emoji: '🧤' },
+];
+
+const boxesEl = document.getElementById('boxes');
+const itemsEl = document.getElementById('items');
+const reactionEl = document.getElementById('reaction');
+const celebrationEl = document.getElementById('celebration');
+
+let matched = new Set();
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildGame() {
+  matched.clear();
+  boxesEl.innerHTML = '';
+  itemsEl.innerHTML = '';
+  celebrationEl.classList.remove('show');
+
+  const shuffledWeathers = shuffle(WEATHERS);
+  const shuffledItems = shuffle(ITEMS);
+
+  shuffledWeathers.forEach(w => {
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.dataset.weather = w.key;
+    box.innerHTML = `
+      <span class="icon">${w.icon}</span>
+      <span class="label">${w.label}</span>
+      <span class="result"></span>
+    `;
+    boxesEl.appendChild(box);
+  });
+
+  shuffledItems.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.dataset.item = item.key;
+    el.textContent = item.emoji;
+    itemsEl.appendChild(el);
+    makeDraggable(el);
+  });
+}
+
+/* --- Drag & Drop (touch + mouse) --- */
+function makeDraggable(el) {
+  let startX, startY, origX, origY, dragging = false;
+
+  function onStart(e) {
+    if (el.classList.contains('matched')) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const rect = el.getBoundingClientRect();
+    origX = rect.left;
+    origY = rect.top;
+    startX = pt.clientX - origX;
+    startY = pt.clientY - origY;
+    el.style.position = 'fixed';
+    el.style.left = origX + 'px';
+    el.style.top = origY + 'px';
+    el.classList.add('dragging');
+    dragging = true;
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const x = pt.clientX - startX;
+    const y = pt.clientY - startY;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+
+    // Highlight drop zone
+    document.querySelectorAll('.box').forEach(b => b.classList.remove('hover'));
+    const target = getDropTarget(pt.clientX, pt.clientY);
+    if (target) target.classList.add('hover');
+  }
+
+  function onEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    el.classList.remove('dragging');
+    document.querySelectorAll('.box').forEach(b => b.classList.remove('hover'));
+
+    const pt = e.changedTouches ? e.changedTouches[0] : e;
+    const target = getDropTarget(pt.clientX, pt.clientY);
+
+    if (target) {
+      checkMatch(el, target);
+    } else {
+      resetPosition(el);
+    }
+  }
+
+  el.addEventListener('mousedown', onStart);
+  el.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
+}
+
+function getDropTarget(x, y) {
+  for (const box of document.querySelectorAll('.box')) {
+    if (box.classList.contains('matched')) continue;
+    const r = box.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return box;
+  }
+  return null;
+}
+
+function resetPosition(el) {
+  el.style.position = '';
+  el.style.left = '';
+  el.style.top = '';
+  el.classList.add('bounce');
+  el.addEventListener('animationend', () => el.classList.remove('bounce'), { once: true });
+}
+
+function checkMatch(itemEl, boxEl) {
+  const itemKey = itemEl.dataset.item;
+  const weatherKey = boxEl.dataset.weather;
+  const weather = WEATHERS.find(w => w.key === weatherKey);
+
+  if (weather.match === itemKey) {
+    // Correct!
+    matched.add(itemKey);
+    itemEl.classList.add('matched');
+    resetPosition(itemEl);
+    boxEl.classList.add('matched');
+    boxEl.querySelector('.result').textContent = weather.successEmoji;
+    showReaction(weather.successEmoji);
+
+    if (matched.size === 3) {
+      setTimeout(showCelebration, 800);
+    }
+  } else {
+    // Wrong
+    showReaction('😢');
+    resetPosition(itemEl);
+  }
+}
+
+function showReaction(emoji) {
+  reactionEl.textContent = emoji;
+  reactionEl.classList.add('show');
+  setTimeout(() => reactionEl.classList.remove('show'), 900);
+}
+
+function showCelebration() {
+  celebrationEl.classList.add('show');
+  spawnConfetti();
+}
+
+function spawnConfetti() {
+  const colors = ['#ff6b9d','#ffdf00','#00d2ff','#7cff6b','#ff6bff','#ff9340'];
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.top = -20 + 'px';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    c.style.animationDelay = (Math.random() * .8) + 's';
+    c.style.width = (8 + Math.random() * 10) + 'px';
+    c.style.height = (8 + Math.random() * 10) + 'px';
+    document.body.appendChild(c);
+    c.addEventListener('animationend', () => c.remove());
+  }
+}
+
+document.getElementById('play-again').addEventListener('click', buildGame);
+
+buildGame();
+</script>
+</body>
+</html>
