@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Animal Matching Game</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #c6f6d5 0%, #fefcbf 50%, #fed7aa 100%);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: clamp(1.5rem, 5vw, 2.8rem);
+    padding: 8px 0 4px;
+    color: #2d6a30;
+    text-shadow: 2px 2px 0 #fff;
+  }
+
+  #game { display: flex; flex-direction: column; align-items: center; height: 100%; }
+
+  /* --- Drop Zones --- */
+  #boxes {
+    display: flex;
+    justify-content: center;
+    gap: clamp(10px, 3vw, 30px);
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .box {
+    width: clamp(120px, 26vw, 240px);
+    min-height: clamp(140px, 28vw, 260px);
+    border: 6px dashed #fff;
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: transform .15s, border-color .15s, background .15s;
+    position: relative;
+  }
+  .box[data-category="reptile"]   { background: rgba(104,211,145,.35); }
+  .box[data-category="mammal"]    { background: rgba(246,173,85,.35); }
+  .box[data-category="amphibian"] { background: rgba(129,178,240,.35); }
+
+  .box .icon { font-size: clamp(2.8rem, 7vw, 5rem); line-height: 1; }
+  .box .label {
+    font-size: clamp(.9rem, 2.8vw, 1.5rem);
+    font-weight: 700;
+    color: #333;
+  }
+  .box.hover {
+    transform: scale(1.08);
+    border-color: #ffdf00;
+    box-shadow: 0 0 30px rgba(255,223,0,.5);
+  }
+  .box .matched-items {
+    display: flex;
+    gap: 2px;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    min-height: 1.2em;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* --- Draggable Items --- */
+  #items {
+    display: flex;
+    justify-content: center;
+    gap: clamp(12px, 3vw, 30px);
+    margin-top: clamp(14px, 3vh, 30px);
+    flex-wrap: wrap;
+    max-width: 95vw;
+  }
+
+  .item {
+    width: clamp(80px, 18vw, 140px);
+    height: clamp(80px, 18vw, 140px);
+    background: #fff;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(2.8rem, 8vw, 5.5rem);
+    box-shadow: 0 6px 20px rgba(0,0,0,.15);
+    cursor: grab;
+    transition: transform .25s, opacity .25s, box-shadow .15s;
+    position: relative;
+    z-index: 10;
+  }
+  .item:active { cursor: grabbing; }
+  .item.dragging {
+    z-index: 1000;
+    transform: scale(1.15);
+    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    opacity: .85;
+  }
+  .item.matched {
+    opacity: .3;
+    pointer-events: none;
+    transform: scale(.8);
+  }
+  .item.bounce {
+    animation: bounce .5s ease;
+  }
+  @keyframes bounce {
+    0%   { transform: translateY(0); }
+    30%  { transform: translateY(-30px); }
+    50%  { transform: translateY(0); }
+    70%  { transform: translateY(-12px); }
+    100% { transform: translateY(0); }
+  }
+
+  /* --- Reaction Popup --- */
+  #reaction {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: clamp(5rem, 18vw, 11rem);
+    z-index: 2000;
+    pointer-events: none;
+    transition: transform .3s ease, opacity .3s;
+    opacity: 0;
+  }
+  #reaction.show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  /* --- Celebration Overlay --- */
+  #celebration {
+    position: fixed; inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.45);
+    z-index: 3000;
+  }
+  #celebration.show { display: flex; }
+  #celebration .msg {
+    font-size: clamp(2rem, 7vw, 4.5rem);
+    color: #fff;
+    font-weight: 900;
+    text-shadow: 3px 3px 0 #38a169;
+    text-align: center;
+    animation: pop .5s ease;
+  }
+  #celebration .stars {
+    font-size: clamp(3rem, 10vw, 6rem);
+    animation: pop .6s ease .15s both;
+  }
+  #play-again {
+    margin-top: 30px;
+    padding: 18px 50px;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 800;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #68d391, #f6ad55);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,.3);
+    animation: pop .6s ease .3s both;
+  }
+  @keyframes pop {
+    0%   { transform: scale(0); }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  /* --- Confetti --- */
+  .confetti {
+    position: fixed;
+    width: 12px; height: 12px;
+    border-radius: 2px;
+    z-index: 3001;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <h1>Where Does Each Animal Belong?</h1>
+  <div id="boxes"></div>
+  <div id="items"></div>
+</div>
+
+<div id="reaction"></div>
+
+<div id="celebration">
+  <div class="stars">🎉🦁🎉</div>
+  <div class="msg">Amazing Job!</div>
+  <div class="stars">⭐🐸⭐</div>
+  <button id="play-again">Play Again!</button>
+</div>
+
+<script>
+const CATEGORIES = [
+  { key: 'reptile',   icon: '🦎', label: 'Reptiles' },
+  { key: 'mammal',    icon: '🐾', label: 'Mammals' },
+  { key: 'amphibian', icon: '🐸', label: 'Amphibians' },
+];
+
+const ALL_ANIMALS = [
+  // Reptiles
+  { key: 'turtle',     emoji: '🐢', category: 'reptile' },
+  { key: 'snake',      emoji: '🐍', category: 'reptile' },
+  { key: 'crocodile',  emoji: '🐊', category: 'reptile' },
+  { key: 'lizard',     emoji: '🦎', category: 'reptile' },
+  // Mammals
+  { key: 'dog',        emoji: '🐶', category: 'mammal' },
+  { key: 'cat',        emoji: '🐱', category: 'mammal' },
+  { key: 'lion',       emoji: '🦁', category: 'mammal' },
+  { key: 'elephant',   emoji: '🐘', category: 'mammal' },
+  { key: 'rabbit',     emoji: '🐰', category: 'mammal' },
+  { key: 'monkey',     emoji: '🐵', category: 'mammal' },
+  // Amphibians
+  { key: 'frog',       emoji: '🐸', category: 'amphibian' },
+  { key: 'newt',       emoji: '🦎', category: 'amphibian' },
+  { key: 'toad',       emoji: '🐸', category: 'amphibian' },
+];
+
+// Pick one random animal from each category so there's always one of each
+function pickAnimals() {
+  const byCategory = { reptile: [], mammal: [], amphibian: [] };
+  ALL_ANIMALS.forEach(a => byCategory[a.category].push(a));
+  return [
+    pick(byCategory.reptile),
+    pick(byCategory.mammal),
+    pick(byCategory.amphibian),
+  ];
+}
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+const boxesEl = document.getElementById('boxes');
+const itemsEl = document.getElementById('items');
+const reactionEl = document.getElementById('reaction');
+const celebrationEl = document.getElementById('celebration');
+
+let matchCount = 0;
+let totalItems = 3;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildGame() {
+  matchCount = 0;
+  boxesEl.innerHTML = '';
+  itemsEl.innerHTML = '';
+  celebrationEl.classList.remove('show');
+
+  const animals = pickAnimals();
+  totalItems = animals.length;
+
+  const shuffledCategories = shuffle(CATEGORIES);
+  const shuffledAnimals = shuffle(animals);
+
+  shuffledCategories.forEach(cat => {
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.dataset.category = cat.key;
+    box.innerHTML = `
+      <span class="icon">${cat.icon}</span>
+      <span class="label">${cat.label}</span>
+      <div class="matched-items"></div>
+    `;
+    boxesEl.appendChild(box);
+  });
+
+  shuffledAnimals.forEach(animal => {
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.dataset.item = animal.key;
+    el.dataset.category = animal.category;
+    el.textContent = animal.emoji;
+    itemsEl.appendChild(el);
+    makeDraggable(el);
+  });
+}
+
+/* --- Drag & Drop (touch + mouse) --- */
+function makeDraggable(el) {
+  let startX, startY, origX, origY, dragging = false;
+
+  function onStart(e) {
+    if (el.classList.contains('matched')) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const rect = el.getBoundingClientRect();
+    origX = rect.left;
+    origY = rect.top;
+    startX = pt.clientX - origX;
+    startY = pt.clientY - origY;
+    el.style.position = 'fixed';
+    el.style.left = origX + 'px';
+    el.style.top = origY + 'px';
+    el.classList.add('dragging');
+    dragging = true;
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const x = pt.clientX - startX;
+    const y = pt.clientY - startY;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+
+    document.querySelectorAll('.box').forEach(b => b.classList.remove('hover'));
+    const target = getDropTarget(pt.clientX, pt.clientY);
+    if (target) target.classList.add('hover');
+  }
+
+  function onEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    el.classList.remove('dragging');
+    document.querySelectorAll('.box').forEach(b => b.classList.remove('hover'));
+
+    const pt = e.changedTouches ? e.changedTouches[0] : e;
+    const target = getDropTarget(pt.clientX, pt.clientY);
+
+    if (target) {
+      checkMatch(el, target);
+    } else {
+      resetPosition(el);
+    }
+  }
+
+  el.addEventListener('mousedown', onStart);
+  el.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
+}
+
+function getDropTarget(x, y) {
+  for (const box of document.querySelectorAll('.box')) {
+    const r = box.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return box;
+  }
+  return null;
+}
+
+function resetPosition(el) {
+  el.style.position = '';
+  el.style.left = '';
+  el.style.top = '';
+  el.classList.add('bounce');
+  el.addEventListener('animationend', () => el.classList.remove('bounce'), { once: true });
+}
+
+function checkMatch(itemEl, boxEl) {
+  const itemCategory = itemEl.dataset.category;
+  const boxCategory = boxEl.dataset.category;
+
+  if (itemCategory === boxCategory) {
+    // Correct!
+    matchCount++;
+    itemEl.classList.add('matched');
+    resetPosition(itemEl);
+
+    // Add emoji to the box
+    const container = boxEl.querySelector('.matched-items');
+    const span = document.createElement('span');
+    span.textContent = itemEl.textContent;
+    container.appendChild(span);
+
+    const celebrations = ['🥳', '👏', '💚', '✅', '🌟'];
+    showReaction(celebrations[Math.floor(Math.random() * celebrations.length)]);
+
+    if (matchCount === totalItems) {
+      setTimeout(showCelebration, 800);
+    }
+  } else {
+    // Wrong
+    showReaction('😢');
+    resetPosition(itemEl);
+  }
+}
+
+function showReaction(emoji) {
+  reactionEl.textContent = emoji;
+  reactionEl.classList.add('show');
+  setTimeout(() => reactionEl.classList.remove('show'), 900);
+}
+
+function showCelebration() {
+  celebrationEl.classList.add('show');
+  spawnConfetti();
+}
+
+function spawnConfetti() {
+  const colors = ['#68d391','#f6ad55','#63b3ed','#fc8181','#d6bcfa','#fefcbf'];
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.top = -20 + 'px';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    c.style.animationDelay = (Math.random() * .8) + 's';
+    c.style.width = (8 + Math.random() * 10) + 'px';
+    c.style.height = (8 + Math.random() * 10) + 'px';
+    document.body.appendChild(c);
+    c.addEventListener('animationend', () => c.remove());
+  }
+}
+
+document.getElementById('play-again').addEventListener('click', buildGame);
+
+buildGame();
+</script>
+</body>
+</html>
