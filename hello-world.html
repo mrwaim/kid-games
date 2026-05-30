@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hello World! 🌈</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fbc2eb, #a18cd1, #84fab0, #8fd3f4);
+      background-size: 400% 400%;
+      animation: rainbowBG 15s ease infinite;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    @keyframes rainbowBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 12vw, 7rem);
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    h1 span {
+      display: inline-block;
+      animation: wiggle 2s ease-in-out infinite;
+      text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    /* A different bright color for each letter */
+    h1 span:nth-child(1)  { color: #ff1744; animation-delay: 0.0s; }
+    h1 span:nth-child(2)  { color: #ff9100; animation-delay: 0.1s; }
+    h1 span:nth-child(3)  { color: #ffd600; animation-delay: 0.2s; }
+    h1 span:nth-child(4)  { color: #00e676; animation-delay: 0.3s; }
+    h1 span:nth-child(5)  { color: #00b0ff; animation-delay: 0.4s; }
+    h1 span:nth-child(6)  { color: #d500f9; animation-delay: 0.5s; }
+    h1 span:nth-child(7)  { color: #ff4081; animation-delay: 0.6s; }
+    h1 span:nth-child(8)  { color: #1de9b6; animation-delay: 0.7s; }
+    h1 span:nth-child(9)  { color: #ff6d00; animation-delay: 0.8s; }
+    h1 span:nth-child(10) { color: #c51162; animation-delay: 0.9s; }
+    h1 span:nth-child(11) { color: #2979ff; animation-delay: 1.0s; }
+
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-8deg) translateY(0); }
+      50%      { transform: rotate(8deg) translateY(-10px); }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: scale(1); }
+      50%      { transform: scale(1.05); }
+    }
+
+    .emojis {
+      font-size: clamp(2rem, 8vw, 4rem);
+      margin-top: 1.5rem;
+      animation: spin 6s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .subtitle {
+      margin-top: 1.5rem;
+      font-size: clamp(1rem, 4vw, 1.8rem);
+      color: #fff;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.6rem 1.4rem;
+      border-radius: 999px;
+      text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .home-link {
+      margin-top: 2rem;
+      font-size: clamp(0.9rem, 3vw, 1.2rem);
+      color: #fff;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.25);
+      padding: 0.5rem 1.2rem;
+      border-radius: 999px;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .home-link:hover {
+      transform: scale(1.1);
+      background: rgba(255, 255, 255, 0.45);
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <span>H</span><span>e</span><span>l</span><span>l</span><span>o</span>
+    <span>W</span><span>o</span><span>r</span><span>l</span><span>d</span><span>!</span>
+  </h1>
+  <div class="emojis">🌈 ⭐ 🎈 🦄 🎨</div>
+  <p class="subtitle">Welcome, friends! 🎉</p>
+  <a class="home-link" href="index.html">🏠 Back to Games</a>
+</body>
+</html>
