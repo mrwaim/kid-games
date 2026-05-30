@@ -212,6 +212,57 @@
     #zap.fire {
       animation: zapFlash 0.4s ease-out;
     }
+
+    .funny-btn {
+      margin-top: 1rem;
+      font-family: inherit;
+      font-size: clamp(1.1rem, 4vw, 1.6rem);
+      font-weight: 800;
+      color: #4a3080;
+      background: #00e676;
+      border: none;
+      border-radius: 999px;
+      padding: 0.8rem 1.8rem;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #00a152, 0 8px 20px rgba(0, 0, 0, 0.2);
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      user-select: none;
+    }
+
+    .funny-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .funny-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #00a152, 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .joke {
+      margin-top: 1rem;
+      max-width: 90vw;
+      font-size: clamp(1rem, 3.5vw, 1.5rem);
+      color: #4a3080;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 0.8rem 1.4rem;
+      border-radius: 20px;
+      min-height: 1.2em;
+    }
+
+    /* Emoji confetti that falls when you press Funny */
+    .confetti {
+      position: fixed;
+      top: -10vh;
+      font-size: 2.5rem;
+      pointer-events: none;
+      animation: fall linear forwards;
+      z-index: 5;
+    }
+
+    @keyframes fall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(120vh) rotate(720deg); opacity: 0.8; }
+    }
   </style>
 </head>
 <body>
@@ -227,6 +278,8 @@
     <button class="animal-btn" onclick="playAnimal()">🐮 Animal sound!</button>
     <div class="animal-display" id="animalDisplay"></div>
     <button class="shrink-btn" onclick="shrinkRay()">🔫 Shrink Ray!</button>
+    <button class="funny-btn" onclick="beFunny()">😜 Funny!</button>
+    <div class="joke" id="joke"></div>
   </div>
 
   <script>
@@ -395,6 +448,60 @@
 
       // Toggle the size.
       stage.classList.toggle('shrunk');
+    }
+
+    // Funny button: tells a random kid joke, rains emojis, and giggles.
+    const jokes = [
+      'Why did the banana go to the doctor? Because it wasn’t peeling well! 🍌',
+      'What do you call a sleeping dinosaur? A dino-snore! 🦕',
+      'Why did the cookie go to the hospital? It felt crummy! 🍪',
+      'What do you call a bear with no teeth? A gummy bear! 🐻',
+      'Why can’t your nose be 12 inches long? Because then it would be a foot! 👃',
+      'What did one wall say to the other? Meet you at the corner! 🧱',
+      'Why did the chicken cross the playground? To get to the other slide! 🐔',
+      'What do you call cheese that isn’t yours? Nacho cheese! 🧀',
+      'Why was the math book sad? It had too many problems! 📚',
+      'What’s an alligator in a vest called? An investi-gator! 🐊'
+    ];
+    const confettiEmojis = ['😂', '🤪', '😜', '🎉', '🥳', '😆', '🤡', '⭐', '🌈'];
+
+    function beFunny() {
+      // Pick and show a random joke.
+      const joke = document.getElementById('joke');
+      joke.textContent = jokes[Math.floor(Math.random() * jokes.length)];
+
+      // Rain emoji confetti.
+      for (let i = 0; i < 25; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.textContent = confettiEmojis[Math.floor(Math.random() * confettiEmojis.length)];
+        c.style.left = Math.random() * 100 + 'vw';
+        c.style.fontSize = (1.5 + Math.random() * 2.5) + 'rem';
+        c.style.animationDuration = (2 + Math.random() * 2) + 's';
+        c.style.animationDelay = (Math.random() * 0.5) + 's';
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 4500);
+      }
+
+      // Silly giggle: a few quick rising "hee hee" blips.
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = ctx.currentTime;
+      for (let i = 0; i < 5; i++) {
+        const t = now + i * 0.13;
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(500 + i * 80, t);
+        osc.frequency.linearRampToValueAtTime(750 + i * 80, t + 0.08);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.1);
+      }
+      setTimeout(() => ctx.close(), 1200);
     }
   </script>
 </body>
