@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hello World! 🌈</title>
+  <title>Assalamualaikum! 🌙</title>
   <style>
     * {
       margin: 0;
@@ -32,7 +32,7 @@
     }
 
     h1 {
-      font-size: clamp(2.5rem, 12vw, 7rem);
+      font-size: clamp(2rem, 9vw, 5.5rem);
       animation: bounce 2s ease-in-out infinite;
     }
 
@@ -42,18 +42,32 @@
       text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
     }
 
-    /* A different bright color for each letter */
-    h1 span:nth-child(1)  { color: #ff1744; animation-delay: 0.0s; }
-    h1 span:nth-child(2)  { color: #ff9100; animation-delay: 0.1s; }
-    h1 span:nth-child(3)  { color: #ffd600; animation-delay: 0.2s; }
-    h1 span:nth-child(4)  { color: #00e676; animation-delay: 0.3s; }
-    h1 span:nth-child(5)  { color: #00b0ff; animation-delay: 0.4s; }
-    h1 span:nth-child(6)  { color: #d500f9; animation-delay: 0.5s; }
-    h1 span:nth-child(7)  { color: #ff4081; animation-delay: 0.6s; }
-    h1 span:nth-child(8)  { color: #1de9b6; animation-delay: 0.7s; }
-    h1 span:nth-child(9)  { color: #ff6d00; animation-delay: 0.8s; }
-    h1 span:nth-child(10) { color: #c51162; animation-delay: 0.9s; }
-    h1 span:nth-child(11) { color: #2979ff; animation-delay: 1.0s; }
+    /* A different bright color for each letter (cycled) */
+    h1 span:nth-child(8n+1) { color: #ff1744; }
+    h1 span:nth-child(8n+2) { color: #ff9100; }
+    h1 span:nth-child(8n+3) { color: #ffd600; }
+    h1 span:nth-child(8n+4) { color: #00e676; }
+    h1 span:nth-child(8n+5) { color: #00b0ff; }
+    h1 span:nth-child(8n+6) { color: #d500f9; }
+    h1 span:nth-child(8n+7) { color: #ff4081; }
+    h1 span:nth-child(8n+8) { color: #1de9b6; }
+
+    /* Stagger the wiggle so it looks playful */
+    h1 span:nth-child(1)  { animation-delay: 0.00s; }
+    h1 span:nth-child(2)  { animation-delay: 0.08s; }
+    h1 span:nth-child(3)  { animation-delay: 0.16s; }
+    h1 span:nth-child(4)  { animation-delay: 0.24s; }
+    h1 span:nth-child(5)  { animation-delay: 0.32s; }
+    h1 span:nth-child(6)  { animation-delay: 0.40s; }
+    h1 span:nth-child(7)  { animation-delay: 0.48s; }
+    h1 span:nth-child(8)  { animation-delay: 0.56s; }
+    h1 span:nth-child(9)  { animation-delay: 0.64s; }
+    h1 span:nth-child(10) { animation-delay: 0.72s; }
+    h1 span:nth-child(11) { animation-delay: 0.80s; }
+    h1 span:nth-child(12) { animation-delay: 0.88s; }
+    h1 span:nth-child(13) { animation-delay: 0.96s; }
+    h1 span:nth-child(14) { animation-delay: 1.04s; }
+    h1 span:nth-child(15) { animation-delay: 1.12s; }
 
     @keyframes wiggle {
       0%, 100% { transform: rotate(-8deg) translateY(0); }
@@ -89,10 +103,9 @@
 </head>
 <body>
   <h1>
-    <span>H</span><span>e</span><span>l</span><span>l</span><span>o</span>
-    <span>W</span><span>o</span><span>r</span><span>l</span><span>d</span><span>!</span>
+    <span>A</span><span>s</span><span>s</span><span>a</span><span>l</span><span>a</span><span>m</span><span>u</span><span>a</span><span>l</span><span>a</span><span>i</span><span>k</span><span>u</span><span>m</span>
   </h1>
-  <div class="emojis">🌈 ⭐ 🎈 🦄 🎨</div>
-  <p class="subtitle">Welcome, friends! 🎉</p>
+  <div class="emojis">🌙 ⭐ 🕌 🌟 ✨</div>
+  <p class="subtitle">Peace be upon you! 🎉</p>
 </body>
 </html>
