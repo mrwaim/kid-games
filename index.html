@@ -263,6 +263,47 @@
       0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
       100% { transform: translateY(120vh) rotate(720deg); opacity: 0.8; }
     }
+
+    .car-btn {
+      margin-top: 1rem;
+      font-family: inherit;
+      font-size: clamp(1.1rem, 4vw, 1.6rem);
+      font-weight: 800;
+      color: #fff;
+      background: #ff1744;
+      border: none;
+      border-radius: 999px;
+      padding: 0.8rem 1.8rem;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #b2102f, 0 8px 20px rgba(0, 0, 0, 0.2);
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      user-select: none;
+    }
+
+    .car-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .car-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #b2102f, 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* The car that zooms across the screen */
+    .car {
+      position: fixed;
+      bottom: 8vh;
+      left: -20vw;
+      font-size: clamp(3rem, 12vw, 6rem);
+      pointer-events: none;
+      z-index: 6;
+      animation: drive 2.5s linear forwards;
+    }
+
+    @keyframes drive {
+      0%   { left: -20vw; }
+      100% { left: 120vw; }
+    }
   </style>
 </head>
 <body>
@@ -280,6 +321,7 @@
     <button class="shrink-btn" onclick="shrinkRay()">🔫 Shrink Ray!</button>
     <button class="funny-btn" onclick="beFunny()">😜 Funny!</button>
     <div class="joke" id="joke"></div>
+    <button class="car-btn" onclick="driveCar()">🚗 Vroom!</button>
   </div>
 
   <script>
@@ -502,6 +544,62 @@
         osc.stop(t + 0.1);
       }
       setTimeout(() => ctx.close(), 1200);
+    }
+
+    // Car button: drives a car across the screen with a vroom + honk.
+    const cars = ['🚗', '🚙', '🏎️', '🚕', '🚓', '🚌', '🚚'];
+
+    function driveCar() {
+      // Make the car element and send it across.
+      const car = document.createElement('div');
+      car.className = 'car';
+      car.textContent = cars[Math.floor(Math.random() * cars.length)];
+      document.body.appendChild(car);
+      setTimeout(() => car.remove(), 2600);
+
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = ctx.currentTime;
+
+      // Engine "vroom": low buzzy tone that revs up then down.
+      const engine = ctx.createOscillator();
+      engine.type = 'sawtooth';
+      engine.frequency.setValueAtTime(70, now);
+      engine.frequency.linearRampToValueAtTime(180, now + 1.2);
+      engine.frequency.linearRampToValueAtTime(90, now + 2.4);
+
+      const engineGain = ctx.createGain();
+      engineGain.gain.setValueAtTime(0.001, now);
+      engineGain.gain.exponentialRampToValueAtTime(0.3, now + 0.1);
+      engineGain.gain.setValueAtTime(0.3, now + 2.0);
+      engineGain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+
+      const engineFilter = ctx.createBiquadFilter();
+      engineFilter.type = 'lowpass';
+      engineFilter.frequency.setValueAtTime(700, now);
+
+      engine.connect(engineFilter);
+      engineFilter.connect(engineGain);
+      engineGain.connect(ctx.destination);
+      engine.start(now);
+      engine.stop(now + 2.5);
+
+      // Honk: two short "beep beep" notes partway through.
+      [0.6, 0.85].forEach((offset) => {
+        const t = now + offset;
+        const honk = ctx.createOscillator();
+        honk.type = 'square';
+        honk.frequency.setValueAtTime(440, t);
+        const hGain = ctx.createGain();
+        hGain.gain.setValueAtTime(0.001, t);
+        hGain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+        hGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        honk.connect(hGain);
+        hGain.connect(ctx.destination);
+        honk.start(t);
+        honk.stop(t + 0.15);
+      });
+
+      setTimeout(() => ctx.close(), 2700);
     }
   </script>
 </body>
