@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Race Game! 🏁</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #84fab0, #8fd3f4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 7vw, 3.5rem);
+      color: #4a3080;
+      text-shadow: 2px 2px 0 #fff;
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    .info {
+      font-size: clamp(1rem, 4vw, 1.5rem);
+      color: #fff;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.5rem 1.2rem;
+      border-radius: 999px;
+      margin-bottom: 14px;
+      text-align: center;
+      min-height: 1.4em;
+    }
+
+    .track-area {
+      width: 100%;
+      max-width: 700px;
+      background: #fff;
+      border-radius: 24px;
+      padding: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .lane {
+      position: relative;
+      height: clamp(48px, 12vw, 70px);
+      margin: 8px 0;
+      background: repeating-linear-gradient(
+        to right,
+        #e0e0e0 0 30px,
+        #f5f5f5 30px 60px
+      );
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .finish {
+      position: absolute;
+      top: 0;
+      right: 6px;
+      height: 100%;
+      width: 14px;
+      background:
+        repeating-conic-gradient(#000 0 25%, #fff 0 50%) 0 0 / 14px 14px;
+      border-radius: 3px;
+    }
+
+    .racer {
+      position: absolute;
+      bottom: 0;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      font-size: clamp(2rem, 9vw, 3.2rem);
+      transition: left 0.18s ease-out;
+      transform: scaleX(-1); /* face right */
+    }
+
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .go-btn {
+      font-family: inherit;
+      font-size: clamp(1.4rem, 6vw, 2.2rem);
+      font-weight: 800;
+      color: #fff;
+      background: #ff1744;
+      border: none;
+      border-radius: 999px;
+      padding: 1rem 2.6rem;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #b2102f, 0 8px 20px rgba(0, 0, 0, 0.2);
+      transition: transform 0.06s ease, box-shadow 0.06s ease;
+      touch-action: manipulation;
+    }
+
+    .go-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #b2102f, 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .start-btn {
+      font-family: inherit;
+      font-size: clamp(1rem, 4vw, 1.4rem);
+      font-weight: 800;
+      color: #4a3080;
+      background: #ffd600;
+      border: none;
+      border-radius: 999px;
+      padding: 0.7rem 1.6rem;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #c7a800;
+      touch-action: manipulation;
+    }
+
+    .start-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #c7a800; }
+
+    .home-link {
+      margin-top: 18px;
+      font-size: clamp(0.9rem, 3vw, 1.2rem);
+      color: #4a3080;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 0.5rem 1.2rem;
+      border-radius: 999px;
+      font-weight: 800;
+    }
+
+    .winner {
+      animation: pop 0.5s ease infinite alternate;
+    }
+    @keyframes pop {
+      from { transform: scale(1); }
+      to   { transform: scale(1.25); }
+    }
+  </style>
+</head>
+<body>
+  <h1>🏁 Tap Race! 🏁</h1>
+  <div class="info" id="info">Press START, then tap GO fast to win!</div>
+
+  <div class="track-area">
+    <div class="lane">
+      <div class="finish"></div>
+      <div class="racer" id="player" style="left:0">🏎️</div>
+    </div>
+    <div class="lane">
+      <div class="finish"></div>
+      <div class="racer" id="cpu1" style="left:0">🚙</div>
+    </div>
+    <div class="lane">
+      <div class="finish"></div>
+      <div class="racer" id="cpu2" style="left:0">🚚</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="go-btn" id="goBtn">TAP! 👆</button>
+    <button class="start-btn" id="startBtn">▶ Start Race</button>
+  </div>
+
+  <a class="home-link" href="index.html">🏠 Back Home</a>
+
+  <script>
+    const player = document.getElementById('player');
+    const cpu1 = document.getElementById('cpu1');
+    const cpu2 = document.getElementById('cpu2');
+    const info = document.getElementById('info');
+    const goBtn = document.getElementById('goBtn');
+    const startBtn = document.getElementById('startBtn');
+
+    let racing = false;
+    let positions = { player: 0, cpu1: 0, cpu2: 0 };
+    let cpuTimer = null;
+    const FINISH = 100; // percent of lane to win
+
+    function lanePos(percent) {
+      // Keep the car inside the lane (0% .. ~88% so it doesn't run off the edge).
+      return Math.min(percent, 100) * 0.88 + '%';
+    }
+
+    function reset() {
+      racing = false;
+      positions = { player: 0, cpu1: 0, cpu2: 0 };
+      player.style.left = '0';
+      cpu1.style.left = '0';
+      cpu2.style.left = '0';
+      player.classList.remove('winner');
+      cpu1.classList.remove('winner');
+      cpu2.classList.remove('winner');
+      if (cpuTimer) { clearInterval(cpuTimer); cpuTimer = null; }
+    }
+
+    let audioCtx = null;
+    function beep(freq, dur, type) {
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        osc.type = type || 'square';
+        osc.frequency.setValueAtTime(freq, t);
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.exponentialRampToValueAtTime(0.3, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + dur);
+      } catch (e) { /* ignore */ }
+    }
+
+    function startRace() {
+      reset();
+      let count = 3;
+      info.textContent = '3...';
+      beep(400, 0.2);
+      const countdown = setInterval(() => {
+        count--;
+        if (count > 0) {
+          info.textContent = count + '...';
+          beep(400, 0.2);
+        } else {
+          clearInterval(countdown);
+          info.textContent = 'GO GO GO! 🏎️💨';
+          beep(800, 0.4);
+          racing = true;
+          runCpu();
+        }
+      }, 800);
+    }
+
+    function runCpu() {
+      cpuTimer = setInterval(() => {
+        if (!racing) return;
+        // CPUs move at random-ish speeds so it's beatable but fun.
+        positions.cpu1 += 1 + Math.random() * 2.2;
+        positions.cpu2 += 1 + Math.random() * 2.2;
+        cpu1.style.left = lanePos(positions.cpu1);
+        cpu2.style.left = lanePos(positions.cpu2);
+        checkWinner();
+      }, 120);
+    }
+
+    function tap() {
+      if (!racing) return;
+      positions.player += 4;
+      player.style.left = lanePos(positions.player);
+      beep(600 + Math.random() * 200, 0.05, 'sawtooth');
+      checkWinner();
+    }
+
+    function checkWinner() {
+      let winner = null;
+      if (positions.player >= FINISH) winner = 'player';
+      else if (positions.cpu1 >= FINISH) winner = 'cpu1';
+      else if (positions.cpu2 >= FINISH) winner = 'cpu2';
+      if (!winner) return;
+
+      racing = false;
+      if (cpuTimer) { clearInterval(cpuTimer); cpuTimer = null; }
+
+      if (winner === 'player') {
+        info.textContent = '🎉 YOU WIN! 🏆';
+        player.classList.add('winner');
+        beep(660, 0.15); setTimeout(() => beep(880, 0.3), 160);
+      } else {
+        info.textContent = (winner === 'cpu1' ? '🚙' : '🚚') + ' won! Try again! 💪';
+        document.getElementById(winner).classList.add('winner');
+        beep(300, 0.3, 'sine');
+      }
+    }
+
+    // Controls: tap the GO button (mouse + touch).
+    goBtn.addEventListener('click', tap);
+    startBtn.addEventListener('click', startRace);
+
+    // Also let the spacebar work the GO button on desktops.
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') { e.preventDefault(); tap(); }
+      if (e.code === 'Enter') { e.preventDefault(); startRace(); }
+    });
+  </script>
+</body>
+</html>
