@@ -124,6 +124,37 @@
       transform: translateY(4px);
       box-shadow: 0 2px 0 #c7a800, 0 3px 8px rgba(0, 0, 0, 0.2);
     }
+
+    .animal-btn {
+      margin-top: 1rem;
+      font-family: inherit;
+      font-size: clamp(1.1rem, 4vw, 1.6rem);
+      font-weight: 800;
+      color: #fff;
+      background: #00b0ff;
+      border: none;
+      border-radius: 999px;
+      padding: 0.8rem 1.8rem;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #0081cb, 0 8px 20px rgba(0, 0, 0, 0.2);
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      user-select: none;
+    }
+
+    .animal-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .animal-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #0081cb, 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .animal-display {
+      margin-top: 1rem;
+      font-size: clamp(2.5rem, 10vw, 5rem);
+      min-height: 1.2em;
+    }
   </style>
 </head>
 <body>
@@ -133,6 +164,8 @@
   <div class="emojis">🌙 ⭐ 🕌 🌟 ✨</div>
   <p class="subtitle">Peace be upon you! 🎉</p>
   <button class="fart-btn" onclick="playFart()">💨 Press me!</button>
+  <button class="animal-btn" onclick="playAnimal()">🐮 Animal sound!</button>
+  <div class="animal-display" id="animalDisplay"></div>
 
   <script>
     function playFart() {
@@ -177,6 +210,89 @@
       lfo.stop(now + duration);
 
       osc.onended = () => ctx.close();
+    }
+
+    // A few animals, each synthesized from simple oscillator "notes".
+    const animals = [
+      {
+        emoji: '🐮', name: 'Moo',
+        play: (ctx, t) => tone(ctx, t, 'sawtooth', [[150, 0], [110, 0.7]], 0.8, 600)
+      },
+      {
+        emoji: '🐱', name: 'Meow',
+        play: (ctx, t) => tone(ctx, t, 'sawtooth', [[600, 0], [900, 0.15], [500, 0.4]], 0.4, 1800)
+      },
+      {
+        emoji: '🐶', name: 'Woof',
+        play: (ctx, t) => { tone(ctx, t, 'square', [[200, 0], [120, 0.18]], 0.18, 900);
+                            tone(ctx, t + 0.25, 'square', [[200, 0], [120, 0.18]], 0.18, 900); }
+      },
+      {
+        emoji: '🦆', name: 'Quack',
+        play: (ctx, t) => { tone(ctx, t, 'square', [[400, 0], [300, 0.12]], 0.12, 1500);
+                            tone(ctx, t + 0.18, 'square', [[420, 0], [320, 0.12]], 0.12, 1500); }
+      },
+      {
+        emoji: '🐑', name: 'Baa',
+        play: (ctx, t) => tone(ctx, t, 'sawtooth', [[350, 0], [320, 0.2], [380, 0.5]], 0.6, 1400, 14)
+      },
+      {
+        emoji: '🐦', name: 'Tweet',
+        play: (ctx, t) => { tone(ctx, t, 'sine', [[1800, 0], [2600, 0.1]], 0.1, 4000);
+                            tone(ctx, t + 0.14, 'sine', [[2000, 0], [2800, 0.1]], 0.1, 4000); }
+      }
+    ];
+
+    // Helper: play one oscillator note with a frequency curve + envelope.
+    function tone(ctx, startAt, type, freqPoints, duration, cutoff, vibratoHz) {
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      const base = freqPoints[0][0];
+      osc.frequency.setValueAtTime(base, startAt);
+      for (let i = 1; i < freqPoints.length; i++) {
+        const [freq, dt] = freqPoints[i];
+        osc.frequency.linearRampToValueAtTime(freq, startAt + dt);
+      }
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.001, startAt);
+      gain.gain.exponentialRampToValueAtTime(0.5, startAt + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(cutoff, startAt);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (vibratoHz) {
+        const lfo = ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(vibratoHz, startAt);
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.setValueAtTime(25, startAt);
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        lfo.start(startAt);
+        lfo.stop(startAt + duration);
+      }
+
+      osc.start(startAt);
+      osc.stop(startAt + duration);
+    }
+
+    function playAnimal() {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const animal = animals[Math.floor(Math.random() * animals.length)];
+      animal.play(ctx, ctx.currentTime);
+
+      const display = document.getElementById('animalDisplay');
+      display.textContent = animal.emoji + ' ' + animal.name + '!';
+
+      // Close the context once everything has finished playing.
+      setTimeout(() => ctx.close(), 1500);
     }
   </script>
 </body>
