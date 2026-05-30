@@ -155,17 +155,79 @@
       font-size: clamp(2.5rem, 10vw, 5rem);
       min-height: 1.2em;
     }
+
+    .shrink-btn {
+      margin-top: 1rem;
+      font-family: inherit;
+      font-size: clamp(1.1rem, 4vw, 1.6rem);
+      font-weight: 800;
+      color: #fff;
+      background: #d500f9;
+      border: none;
+      border-radius: 999px;
+      padding: 0.8rem 1.8rem;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #9c00b8, 0 8px 20px rgba(0, 0, 0, 0.2);
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      user-select: none;
+    }
+
+    .shrink-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .shrink-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #9c00b8, 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* The shrink-ray target: everything inside this wrapper scales smoothly */
+    #stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: center center;
+    }
+
+    #stage.shrunk {
+      transform: scale(0.15);
+    }
+
+    /* Quick zap flash when the ray fires */
+    @keyframes zapFlash {
+      0%   { opacity: 0; }
+      30%  { opacity: 0.85; }
+      100% { opacity: 0; }
+    }
+
+    #zap {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, #fff 0%, #d500f9 60%, transparent 100%);
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    #zap.fire {
+      animation: zapFlash 0.4s ease-out;
+    }
   </style>
 </head>
 <body>
-  <h1>
-    <span>A</span><span>s</span><span>s</span><span>a</span><span>l</span><span>a</span><span>m</span><span>u</span><span>a</span><span>l</span><span>a</span><span>i</span><span>k</span><span>u</span><span>m</span>
-  </h1>
-  <div class="emojis">🌙 ⭐ 🕌 🌟 ✨</div>
-  <p class="subtitle">Peace be upon you! 🎉</p>
-  <button class="fart-btn" onclick="playFart()">💨 Press me!</button>
-  <button class="animal-btn" onclick="playAnimal()">🐮 Animal sound!</button>
-  <div class="animal-display" id="animalDisplay"></div>
+  <div id="zap"></div>
+
+  <div id="stage">
+    <h1>
+      <span>A</span><span>s</span><span>s</span><span>a</span><span>l</span><span>a</span><span>m</span><span>u</span><span>a</span><span>l</span><span>a</span><span>i</span><span>k</span><span>u</span><span>m</span>
+    </h1>
+    <div class="emojis">🌙 ⭐ 🕌 🌟 ✨</div>
+    <p class="subtitle">Peace be upon you! 🎉</p>
+    <button class="fart-btn" onclick="playFart()">💨 Press me!</button>
+    <button class="animal-btn" onclick="playAnimal()">🐮 Animal sound!</button>
+    <div class="animal-display" id="animalDisplay"></div>
+    <button class="shrink-btn" onclick="shrinkRay()">🔫 Shrink Ray!</button>
+  </div>
 
   <script>
     function playFart() {
@@ -293,6 +355,46 @@
 
       // Close the context once everything has finished playing.
       setTimeout(() => ctx.close(), 1500);
+    }
+
+    // Shrink ray: toggles everything between tiny and normal, with a laser zap.
+    function shrinkRay() {
+      const stage = document.getElementById('stage');
+      const zap = document.getElementById('zap');
+
+      // Fire the flash overlay.
+      zap.classList.remove('fire');
+      void zap.offsetWidth; // restart the animation
+      zap.classList.add('fire');
+
+      // Laser "pew" sound: a fast downward (or upward) frequency sweep.
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const now = ctx.currentTime;
+      const shrinking = !stage.classList.contains('shrunk');
+
+      const osc = ctx.createOscillator();
+      osc.type = 'square';
+      if (shrinking) {
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(120, now + 0.5);
+      } else {
+        osc.frequency.setValueAtTime(120, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.5);
+      }
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.exponentialRampToValueAtTime(0.4, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.5);
+      osc.onended = () => ctx.close();
+
+      // Toggle the size.
+      stage.classList.toggle('shrunk');
     }
   </script>
 </body>
